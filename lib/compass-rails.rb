@@ -4,6 +4,7 @@ require "compass-rails/configuration"
 
 module CompassRails
 
+    RAILS_4 = %r{^4.}
     RAILS_32 = %r{^3.2}
     RAILS_31 = %r{^3.1}
     RAILS_23 = %r{^2.3}
@@ -21,9 +22,13 @@ module CompassRails
       end
       #load the rails config
       require "#{rails_config_path}/config/application.rb"
-      if rails31? || rails32?
+      if rails31? || rails32? || rails4?
         require 'sass-rails'
-        require 'sprockets/railtie'
+        if rails4?
+          require 'sprockets-rails'
+        else
+          require 'sprockets/railtie'
+        end
         require 'rails/engine'
         @app ||= ::Rails.application.initialize!(:assets)
       end
@@ -98,6 +103,11 @@ module CompassRails
       rails_version =~ RAILS_32
     end
 
+    def rails4?
+      return false unless defined?(::Rails)
+      rails_version =~ RAILS_4
+    end
+
     def rails2?
       rails_version =~ RAILS_23
     end
@@ -114,7 +124,7 @@ module CompassRails
       load_rails unless rails2?
       config = Compass::Configuration::Data.new('rails')
       config.extend(Configuration::Default)
-      if (rails31? || rails32?)
+      if (rails31? || rails32? || rails4?)
         if asset_pipeline_enabled?
           require "compass-rails/configuration/3_1"
           config.extend(Configuration::Rails3_1)
@@ -177,8 +187,23 @@ module CompassRails
 
     def configure_rails!(app)
       return unless app.config.respond_to?(:sass)
-      app.config.compass.to_sass_engine_options.each do |key, value|
-        app.config.sass.send(:"#{key}=", value)
+      sass_config = app.config.sass
+      compass_config = app.config.compass
+
+      sass_config.load_paths.concat(compass_config.sass_load_paths)
+
+      { :output_style => :style,
+        :line_comments => :line_comments,
+        :cache => :cache,
+        :disable_warnings => :quiet,
+        :preferred_syntax => :preferred_syntax
+      }.each do |compass_option, sass_option|
+        set_maybe sass_config, compass_config, sass_option, compass_option
+      end
+      if compass_config.sass_options
+        compass_config.sass_options.each do |config, value|
+          sass_config.send("#{config}=", value)
+        end
       end
     end
 
@@ -197,6 +222,16 @@ module CompassRails
     rails_config = ::Rails.application.config
     rails_config.respond_to?(:assets) && rails_config.assets.try(:enabled)
   end
+
+  private
+
+    # sets the sass config value only if the corresponding compass-based setting
+    # has been explicitly set by the user.
+    def set_maybe(sass_config, compass_config, sass_option, compass_option)
+      if compass_value = compass_config.send(:"#{compass_option}_without_default")
+        sass_config.send(:"#{sass_option}=", compass_value)
+      end
+    end
 
 end
 

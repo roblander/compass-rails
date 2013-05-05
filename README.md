@@ -15,6 +15,7 @@ Add the `compass-rails` gem line to a group called `:assets` in your application
 
 ```ruby
 group :assets do
+  gem 'sass-rails' # if running rails 3.1 or greater
   gem 'compass-rails'
 end
 ```
@@ -31,7 +32,7 @@ file:
 
     $ bundle exec compass init
 
-If using a compass-based framework (like [susy](http://susy.oddbird.net/) or [blueprint](http://compass-style.org/reference/blueprint/)) then you can use the `--using` option to set thi:
+If using a compass-based framework (like [susy](http://susy.oddbird.net/) or [blueprint](http://compass-style.org/reference/blueprint/)) then you can use the `--using` option to set this:
 
     $ bundle exec compass init --using blueprint
 
@@ -46,10 +47,10 @@ older versions of rails that do not use the assets pipeline.
 If you have your stylesheets already in `app/stylesheets`, you have two choices:
 
 1. Move your stylesheets to `app/assets/stylesheets`.
-2. Configure your project to look in `app/assets/stylesheets` by setting
-   `config.compass.sass_dir = "app/stylesheets"` in your rails
-configuration or by setting `sass_dir = "app/stylesheets"` in your
-compass configuration file.
+2. Configure your project to look in the **legacy location** of
+   `app/stylesheets` by setting `config.compass.sass_dir =
+   "app/stylesheets"` in your rails configuration or by setting
+   `sass_dir = "app/stylesheets"` in your compass configuration file.
 
 ## Configuration
 
@@ -130,13 +131,27 @@ then run:
 
     $ bundle
     $ bundle exec compass install susy
+    
+if you are using the rails configuration files you should add:
+
+```ruby
+config.compass.require "susy"
+```
+
+to your application.rb configuration file.
+
 
 ### Notes On Sprockets Directives
 
 Sprockets, used by the rails asset pipeline, provides directives for
 doing things like requiring. These **must not** be used with Sass files.
 Instead use the sass `@import` directive. In rails projects, the
-`@import` directive is configured to work with sprockets via `sass-rails`. For more information on importing in rails 3.1 or greater see the [Sass-Rails REAME](https://github.com/rails/sass-rails/blob/master/README.markdown)
+`@import` directive is configured to work with sprockets via `sass-rails`. For more information on importing in rails 3.1 or greater see the [Sass-Rails README](https://github.com/rails/sass-rails/blob/master/README.markdown)
+
+## Rails 3.1 Caveats
+
+There was a bug in rails 3.1.0 -- please make sure you are running 3.1.1
+at the earliest for this version of rails.
 
 ## Rails 3.0 Caveats
 
